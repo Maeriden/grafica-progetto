@@ -1,0 +1,12 @@
+bin/
+obj/
+
+# Windows ignores
+*.exe
+*.exp
+*.pdb
+
+*.ini
+
+# MacOS ignores
+.DS_Store
