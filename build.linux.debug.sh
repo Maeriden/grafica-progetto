@@ -26,12 +26,12 @@ g++ -obin/main "obj/main.o" ${lflags} -lyocto_gl -lglfw -lGLEW -lGL -pthread
 
 
 # Relocate shaders to a more findable path (from the exe)
-if [ -f "code/shaders/fullscreen_quad.vert" -a ! -f "bin/shaders/shader.vert" ]; then
-	echo "Hardlinking \"code/shaders/fullscreen_quad.vert\" -> \"bin/shaders/shader.vert\""
-	ln "code/shaders/fullscreen_quad.vert" "bin/shaders/shader.vert"
+if [ -f "code/shaders/fullscreen_quad.vert" -a ! -f "bin/shaders/raymarcher.vert" ]; then
+	echo "Hardlinking \"code/shaders/fullscreen_quad.vert\" -> \"bin/shaders/raymarcher.vert\""
+	ln "code/shaders/fullscreen_quad.vert" "bin/shaders/raymarcher.vert"
 fi
 
-if [ -f "code/shaders/raymarcher.frag" -a ! -f "bin/shaders/shader.frag" ]; then
-	echo "Hardlinking \"code/shaders/raymarcher.frag\" -> \"bin/shaders/shader.frag\""
-	ln "code/shaders/raymarcher.frag" "bin/shaders/shader.frag"
+if [ -f "code/shaders/raymarcher.frag" -a ! -f "bin/shaders/raymarcher.frag" ]; then
+	echo "Hardlinking \"code/shaders/raymarcher.frag\" -> \"bin/shaders/raymarcher.frag\""
+	ln "code/shaders/raymarcher.frag" "bin/shaders/raymarcher.frag"
 fi

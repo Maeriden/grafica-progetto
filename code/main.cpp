@@ -5,68 +5,6 @@
 #include "yocto/ext/imgui/imgui_impl_glfw_gl3.cpp"
 
 
-{
-}
-
-
-static
-void
-handle_camera_navigation(ygl::gl_window* window, ygl::camera* camera)
-{
-	static ygl::vec2f mouse_last   = ygl::zero2f;
-	
-	ygl::vec2f mouse_pos    = get_mouse_posf(window);
-	int        mouse_button = get_mouse_button(window);
-	
-	if(!ygl::get_widget_active(window))
-	{
-		ygl::vec3f rotate = {};
-		ygl::vec3f transl = {};
-		
-		// Left mouse button allows to look left-right
-		if(mouse_button == 1)
-		{
-			// Difference in x position becomes rotation around y axis
-			rotate.y = (mouse_pos.x - mouse_last.x) / 100.0f;
-		}
-		
-		// Right mouse button allows to look up-down
-		if(mouse_button == 2)
-		{
-			// Difference in y position becomes rotation around x axis
-			rotate.x = (mouse_pos.y - mouse_last.y) / 100.0f;
-		}
-		
-		
-		if(ygl::get_key(window, GLFW_KEY_A)) transl.x += -0.1f;
-		if(ygl::get_key(window, GLFW_KEY_D)) transl.x += +0.1f;
-		if(ygl::get_key(window, GLFW_KEY_Q)) transl.y += -0.1f;
-		if(ygl::get_key(window, GLFW_KEY_E)) transl.y += +0.1f;
-		if(ygl::get_key(window, GLFW_KEY_W)) transl.z += -0.1f;
-		if(ygl::get_key(window, GLFW_KEY_S)) transl.z += +0.1f;
-		
-		if(rotate != ygl::zero3f || transl != ygl::zero3f)
-		{
-			transform_camera(camera->frame, transl, rotate);
-		}
-	}
-	
-	// Home key resets camera to initial state
-	if(ygl::get_key(window, GLFW_KEY_HOME))
-	{
-		camera->frame = {
-			{1.0f,  0.0f,  0.0f},
-			{0.0f,  1.0f,  0.0f},
-			{0.0f,  0.0f,  1.0f},
-			{0.0f,  0.0f,  5.0f}
-		};
-	}
-	
-	// record mouse position
-	mouse_last = mouse_pos;
-}
-
-
 static
 ygl::gl_program
 load_gl_program()
@@ -74,7 +12,7 @@ load_gl_program()
 	ygl::gl_program result = {};
 	try
 	{
-		std::string vert_shader_code = ygl::load_text("shaders/fullscreen_quad.vert");
+		std::string vert_shader_code = ygl::load_text("shaders/raymarcher.vert");
 		std::string frag_shader_code = ygl::load_text("shaders/raymarcher.frag");
 		result = ygl::make_program(vert_shader_code, frag_shader_code);
 	}
@@ -154,11 +92,7 @@ main(int argc, char** argv)
 		
 		// Update camera
 		{
-			// handle_camera_navigation(window, &camera);
 			ygl::handle_camera_navigation(window, &camera, true);
-			
-			// ygl::vec2i framebufer_size = ygl::get_framebuffer_size(window);
-			// camera.aspect = (float)framebufer_size.x / (float)framebufer_size.y;
 		}
 		
 		ygl::set_program_uniform(gl_program, uniform_location_raymarch_iterations, raymarch_iterations);

@@ -7,7 +7,6 @@ uniform float raymarch_epsilon;
 uniform mat4x3 camera_frame;
 uniform float  camera_yfov;
 uniform float  camera_aspect;
-uniform float  camera_focus;
 uniform float  camera_planes[2];
 
 
@@ -37,13 +36,12 @@ float scene(vec3 point)
 void
 main()
 {
-	float d = camera_focus;
-	float h = d * 2.0f * tan(camera_yfov*0.5f);
-	float w = d *    h * camera_aspect;
+	float h = 2.0f * tan(camera_yfov*0.5f);
+	float w =    h * camera_aspect;
 	
 	vec3 direction = w * camera_frame[0] * (uv.x-0.5f) +
-	                 h * camera_frame[1] * (uv.y-0.5f) +
-	                 d * camera_frame[2];
+	                 h * camera_frame[1] * (uv.y-0.5f) -
+	                     camera_frame[2];
 	vec3 ray_dir = normalize(direction);
 	vec3 ray_pos = camera_frame[3];
 	
