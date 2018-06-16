@@ -9,7 +9,7 @@ optimization_level="d"
 cflags="/nologo /MDd /EHsc /Iinclude /O${optimization_level}"
 dflags="/Zi"
 define="/DPLATFORM_WIN32=1"
-lflags="/nologo /subsystem:windows /incremental:no /opt:ref /libpath:libs\\win32\\x64\\debug"
+lflags="/nologo /subsystem:console /incremental:no /opt:ref /libpath:libs\\win32\\x64\\debug"
 
 # Single-step compilation
 # echo "[$(date +%T)] Building main"
