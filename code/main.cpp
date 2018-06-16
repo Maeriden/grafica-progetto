@@ -74,7 +74,7 @@ load_gl_program()
 	ygl::gl_program result = {};
 	try
 	{
-		std::string vert_shader_code = ygl::load_text("shaders/raymarcher.vert");
+		std::string vert_shader_code = ygl::load_text("shaders/fullscreen_quad.vert");
 		std::string frag_shader_code = ygl::load_text("shaders/raymarcher.frag");
 		result = ygl::make_program(vert_shader_code, frag_shader_code);
 	}
