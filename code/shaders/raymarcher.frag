@@ -68,7 +68,7 @@ main()
 	
 	float total_distance = 0.0f;
 	bool  did_hit        = false;
-	for(int i = 0; i < raymarch_iterations; ++i)
+	for(int i = 0; total_distance <= 100; ++i)
 	{
 		float closest_distance = scene(ray_pos);
 		total_distance += closest_distance;
@@ -90,7 +90,7 @@ main()
 	}
 	
 	
-	result = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	result = vec4(0.2f, 0.2f, 0.2f, 1.0f);
 	if(did_hit)
 	{
 		float e = raymarch_epsilon;
@@ -107,6 +107,16 @@ main()
 		// float color_final = max(0.0f, color_diffuse + color_specular);
 		float color = clamp(color_diffuse, 0.0f, 1.0f);
 		result.rgb = vec3(color, color, color);
+
+		if (ray_pos.y + 1 <= 0.001f) 
+		{
+			vec2 tmp = mod(ray_pos.xz, 1);
+			if ((tmp.x <= 0.5f && tmp.y <= 0.5f) ||
+				(tmp.x >= 0.5f && tmp.y >= 0.5f))
+			{
+				result.rgb *= 0.5f;
+			}
+		}
 	}
 }
 
