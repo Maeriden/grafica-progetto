@@ -54,25 +54,17 @@ float torus( vec3 point, const float height, const float radius)
 float scene(vec3 point);
 
 //----------------------------- Ray Marching -----------------------------------
-void
-main()
+bool ray_cast(inout vec3 ray_pos, const vec3 ray_dir)
 {
-	float h = 2.0f * tan(1*0.5f);
-	float w =    h * camera_aspect;
-	
-	vec3 direction = w * camera_frame[0] * (uv.x-0.5f) +
-	                 h * camera_frame[1] * (uv.y-0.5f) +
-	                 camera_frame[2];
-	vec3 ray_dir = normalize(direction);
-	vec3 ray_pos = camera_frame[3];
-	
-	float total_distance = 0.0f;
-	bool  did_hit        = false;
-	for(int i = 0; total_distance <= 100; ++i)
+	float total_distance     = 0.0f;
+	bool  did_hit            = false;
+	const float max_distance = 100;
+
+	for(int i = 0; total_distance <= max_distance; ++i)
 	{
 		float closest_distance = scene(ray_pos);
 		total_distance += closest_distance;
-		ray_pos        += closest_distance*  0.5 * ray_dir;
+		ray_pos        += closest_distance*  0.5f * ray_dir;
 		
 		if(camera_planes[1] < total_distance)
 		{
@@ -88,7 +80,23 @@ main()
 			break;
 		}
 	}
+	return did_hit;
+}
+
+void
+main()
+{
+	float h = 2.0f * tan(1*0.5f);
+	float w =    h * camera_aspect;
 	
+	vec3 direction = w * camera_frame[0] * (uv.x-0.5f) +
+	                 h * camera_frame[1] * (uv.y-0.5f) -
+	                 camera_frame[2];
+	vec3 ray_dir = normalize(direction);
+	vec3 ray_pos = camera_frame[3];
+	
+
+	bool did_hit = ray_cast(ray_pos, ray_dir);
 	
 	result = vec4(0.2f, 0.2f, 0.2f, 1.0f);
 	if(did_hit)
@@ -100,8 +108,9 @@ main()
 			scene(ray_pos + vec3(0, 0, e)) - scene(ray_pos - vec3(0, 0, e))
 		));
 		
-		// TODO: Proper lighting
-		float color_diffuse  = max(0, dot(-ray_dir, normal));
+		// Proper lighting
+		vec3 sun_dir         = normalize(vec3(0,1,1)); //-ray_dir
+		float color_diffuse  = max(0, dot(sun_dir, normal) + 0.2f);
 		float color_specular = pow(color_diffuse, 32.0f);
 		
 		// float color_final = max(0.0f, color_diffuse + color_specular);
@@ -110,11 +119,15 @@ main()
 
 		if (ray_pos.y + 1 <= 0.001f) 
 		{
-			vec2 tmp = mod(ray_pos.xz, 1);
-			if ((tmp.x <= 0.5f && tmp.y <= 0.5f) ||
-				(tmp.x >= 0.5f && tmp.y >= 0.5f))
+			vec2 tmp = mod(ray_pos.xz, 1.0f);
+			if ((tmp.x >= 0.45f && tmp.x <= 0.55f)||
+				(tmp.y >= 0.45f && tmp.y <= 0.55f))
 			{
 				result.rgb *= 0.5f;
+			}
+			else
+			{
+				result.rgb *= 0.85f;
 			}
 		}
 	}
@@ -280,7 +293,7 @@ float arch_complex(const vec3 point, float width,
 {
 	vec3 lpoint = point;
 
-	float pillar_width  = depth;
+	float pillar_width  = depth*0.8;
 	float pillar_height = height*0.6;
 
 	float arch_width  = width;
@@ -289,8 +302,9 @@ float arch_complex(const vec3 point, float width,
 	float arch_radius = width*0.4;
 
 	lpoint.y = point.y + height/2 - pillar_height/2;
+	lpoint.z = point.z - depth/2  + arch_depth/2;
 
-	// compute distance from column
+	// compute distance from pillar
 	float d_pillar = pillar(lpoint, pillar_width,
 	                                pillar_height,
 	                                pillar_width);
@@ -305,9 +319,8 @@ float arch_complex(const vec3 point, float width,
 	                            arch_radius);
 
 	lpoint = point;
-	lpoint.z -= 0.25;
-	float d_col = column(lpoint, width*0.12,
-	                             height);
+	lpoint.z = point.z - arch_depth/2;
+	float d_col = column(lpoint, depth - arch_depth, height);
 	// return union between column and arch
 	return UNION(
 	             UNION(d_arch,
@@ -339,19 +352,23 @@ float scene(vec3 point)
 
 
 	// get distance from scene objects
-	point.y -= 0.5;
+	point.y -= 0.5f;
 
-	//point = repeat_space(point, vec3(0.8,0,0));
-	point.zx = repeat_circular(point.zx, 57);
+	point = repeat_space(point, vec3(0,1.1,0));
+	//point.zx = repeat_circular(point.zx, 57);
 
 	point.z -= 7;
 
-	point.xz = bend(point.xz);
-
+	//point.xz = bend(point.xz);
 	point.z -= 1;
 
 	float d_obj = arch_complex(point, 0.8, 1, 0.28);
-	//float d_obj = box(point, vec3(0.8,1,1));
-	return UNION(d_floor, d_obj);
+	float d_bb  = 20000;//box(point, vec3(0.4, 0.5, 0.14));
+
+
+	point *=0.1f;
+
+	//float d_obj = box(point, vec3(0.8,100,1));
+	return UNION(UNION(d_floor, d_obj),d_bb);
 }
 

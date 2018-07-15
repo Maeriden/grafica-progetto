@@ -5,6 +5,51 @@
 #include "yocto/ext/imgui/imgui_impl_glfw_gl3.cpp"
 
 
+// Copiata da yogto_gl.cpp
+bool handle_camera_navigation(ygl::gl_window* win, ygl::camera* cam)
+{
+    static auto mouse_last = ygl::zero2f;
+    auto mouse_pos = ygl::get_mouse_posf(win);
+    auto mouse_button = ygl::get_mouse_button(win);
+
+    // updated
+    auto updated = false;
+
+    // handle mouse and keyboard for navigation
+    if (mouse_button && !ygl::get_widget_active(win)) 
+    {
+        auto rotate = ygl::zero2f;
+        switch (mouse_button) {
+            case 1: rotate = (mouse_pos - mouse_last) / 100.0f; break;
+            default: break;
+        }
+        ygl::camera_fps(cam->frame, {0, 0, 0}, rotate);
+        updated = true;
+    }
+
+    // handle keytboard for navigation
+    if (!ygl::get_widget_active(win)) {
+        auto transl = ygl::zero3f;
+        if (ygl::get_key(win, 'a')) transl.x -= 1;
+        if (ygl::get_key(win, 'd')) transl.x += 1;
+        if (ygl::get_key(win, 's')) transl.z += 1;
+        if (ygl::get_key(win, 'w')) transl.z -= 1;
+        if (ygl::get_key(win, 'e')) transl.y += 1;
+        if (ygl::get_key(win, 'q')) transl.y -= 1;
+        if (transl != ygl::zero3f) {
+            ygl::camera_fps(cam->frame, 0.25f * transl, {0, 0});
+            updated = true;
+        }
+    }
+
+    // record mouse position
+    mouse_last = mouse_pos;
+
+    // done
+    return updated;
+}
+
+
 static
 ygl::gl_program
 load_gl_program()
@@ -92,7 +137,7 @@ main(int argc, char** argv)
 		
 		// Update camera
 		{
-			ygl::handle_camera_navigation(window, &camera, true);
+			handle_camera_navigation(window, &camera);
 		}
 		
 		ygl::set_program_uniform(gl_program, uniform_location_raymarch_iterations, raymarch_iterations);
