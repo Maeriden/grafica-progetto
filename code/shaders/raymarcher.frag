@@ -16,7 +16,8 @@ out vec4 result;
 
 
 #define PI 3.14159265
-
+#define MAX_DISTANCE 100
+#define VANISHING_RATEO 0.8
 
 //------------------- signed distance functions --------------------------------
 #define FLOOR(p) p.y
@@ -54,13 +55,12 @@ float torus( vec3 point, const float height, const float radius)
 float scene(vec3 point);
 
 //----------------------------- Ray Marching -----------------------------------
-bool ray_cast(inout vec3 ray_pos, const vec3 ray_dir)
+bool ray_cast(inout vec3 ray_pos, const vec3 ray_dir, inout float total_distance)
 {
-	float total_distance     = 0.0f;
-	bool  did_hit            = false;
-	const float max_distance = 100;
+	total_distance = 0.0f;
+	bool  did_hit  = false;
 
-	for(int i = 0; total_distance <= max_distance; ++i)
+	for(int i = 0; total_distance <= MAX_DISTANCE; ++i)
 	{
 		float closest_distance = scene(ray_pos);
 		total_distance += closest_distance;
@@ -96,9 +96,11 @@ main()
 	vec3 ray_pos = camera_frame[3];
 	
 
-	bool did_hit = ray_cast(ray_pos, ray_dir);
+	float total_distance = 0.0f;
+	bool did_hit = ray_cast(ray_pos, ray_dir, total_distance);
 	
-	result = vec4(0.2f, 0.2f, 0.2f, 1.0f);
+	vec3 background = vec3(0.185, 0.19, 0.2)*(ray_dir.y*2+2);
+	result.rgb = background;
 	if(did_hit)
 	{
 		float e = raymarch_epsilon;
@@ -109,14 +111,23 @@ main()
 		));
 		
 		// Proper lighting
-		vec3 sun_dir         = normalize(vec3(0,1,1)); //-ray_dir
-		float color_diffuse  = max(0, dot(sun_dir, normal) + 0.2f);
-		float color_specular = pow(color_diffuse, 32.0f);
+		vec3 sun_dir         = normalize(vec3(0,1,-0.5));
+		float color_diffuse  = max(0.1, dot(sun_dir, normal)+0.5);
+		//float color_specular = pow(color_diffuse, 32.0f);
 		
 		// float color_final = max(0.0f, color_diffuse + color_specular);
 		float color = clamp(color_diffuse, 0.0f, 1.0f);
 		result.rgb = vec3(color, color, color);
 
+		// graceful distance vanishing
+		if (total_distance < MAX_DISTANCE && 
+			total_distance > MAX_DISTANCE*VANISHING_RATEO)
+		{
+			float alpha = (total_distance - MAX_DISTANCE*VANISHING_RATEO)/(MAX_DISTANCE*(1-VANISHING_RATEO));
+			result.rgb = result.rgb*(1-alpha) + alpha*background;
+		}
+
+		// floor color changing
 		if (ray_pos.y + 1 <= 0.001f) 
 		{
 			vec2 tmp = mod(ray_pos.xz, 1.0f);
@@ -298,11 +309,11 @@ float arch_complex(const vec3 point, float width,
 
 	float arch_width  = width;
 	float arch_height = height - pillar_height;
-	float arch_depth  = depth*0.9;
+	float arch_depth  = depth*0.8;
 	float arch_radius = width*0.4;
 
 	lpoint.y = point.y + height/2 - pillar_height/2;
-	lpoint.z = point.z - depth/2  + arch_depth/2;
+	lpoint.z = point.z + depth/2  - arch_depth/2;
 
 	// compute distance from pillar
 	float d_pillar = pillar(lpoint, pillar_width,
@@ -310,7 +321,6 @@ float arch_complex(const vec3 point, float width,
 	                                pillar_width);
 
 	lpoint.y = point.y - height/2 + arch_height/2;
-
 
 	// get distance of arch
 	float d_arch = arch(lpoint, arch_width,
@@ -342,6 +352,24 @@ vec2 bend( vec2 p )
     return q;
 }
 
+float unit(vec3 point, float width,
+                       float height,
+                       float depth)
+{
+	vec3 lpoint = point;
+	lpoint.y += 0.1;
+	float d_arch = arch_complex(lpoint, width, height*0.8, depth);
+	
+	lpoint.y = lpoint.y - 0.5;
+	float d_floor1 = box(lpoint, vec3 (width/2, height*0.1, depth/2));
+	lpoint.y = point.y + 0.6;
+	float d_floor2 = box(lpoint, vec3 (width/2, height*0.1, depth/2));
+
+
+	return UNION(UNION(d_arch, d_floor1),d_floor2);
+}
+
+
 float scene(vec3 point)
 {
 	// move space down (because camera has position 0)
@@ -350,25 +378,22 @@ float scene(vec3 point)
 	// get floor distance
 	float d_floor = FLOOR(point);
 
-
 	// get distance from scene objects
 	point.y -= 0.5f;
 
-	point = repeat_space(point, vec3(0,1.1,0));
-	//point.zx = repeat_circular(point.zx, 57);
+	point.zx = repeat_circular(point.zx, 57);
+	point = repeat_space(point, vec3(0,1,0));
 
 	point.z -= 7;
-
-	//point.xz = bend(point.xz);
+	point.xz = bend(point.xz);
 	point.z -= 1;
 
-	float d_obj = arch_complex(point, 0.8, 1, 0.28);
-	float d_bb  = 20000;//box(point, vec3(0.4, 0.5, 0.14));
+	float d_obj  = box(point, vec3(0.4, 0.5, 0.20));
+	if (d_obj <= raymarch_epsilon)
+	{
+		d_obj = unit(point, 0.8, 1, 0.40);
+	}
 
-
-	point *=0.1f;
-
-	//float d_obj = box(point, vec3(0.8,100,1));
-	return UNION(UNION(d_floor, d_obj),d_bb);
+	return UNION(d_floor, d_obj);
 }
 
