@@ -26,9 +26,9 @@ g++ -obin/main "obj/main.o" ${lflags} -lyocto_gl -lglfw -lGLEW -lGL -pthread
 
 
 # Relocate shaders to a more findable path (from the exe)
-if [ -f "code/shaders/fullscreen_quad.vert" -a ! -f "bin/shaders/raymarcher.vert" ]; then
-	echo "Hardlinking \"code/shaders/fullscreen_quad.vert\" -> \"bin/shaders/raymarcher.vert\""
-	ln "code/shaders/fullscreen_quad.vert" "bin/shaders/raymarcher.vert"
+if [ -f "code/shaders/raymarcher.vert" -a ! -f "bin/shaders/raymarcher.vert" ]; then
+	echo "Hardlinking \"code/shaders/raymarcher.vert\" -> \"bin/shaders/raymarcher.vert\""
+	ln "code/shaders/raymarcher.vert" "bin/shaders/raymarcher.vert"
 fi
 
 if [ -f "code/shaders/raymarcher.frag" -a ! -f "bin/shaders/raymarcher.frag" ]; then

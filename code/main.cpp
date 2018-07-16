@@ -6,8 +6,49 @@
 #include "extra.cpp"
 
 
-#define DEFAULT_SCREEN_SIZE_X 800
-#define DEFAULT_SCREEN_SIZE_Y 600
+// Copiata da yogto_gl.cpp
+bool yocto_camera_navigation(ygl::gl_window* win, ygl::camera* cam)
+{
+    static auto mouse_last = ygl::zero2f;
+    auto mouse_pos = ygl::get_mouse_posf(win);
+    auto mouse_button = ygl::get_mouse_button(win);
+
+    // updated
+    auto updated = false;
+
+    // handle mouse and keyboard for navigation
+    if (mouse_button && !ygl::get_widget_active(win)) 
+    {
+        auto rotate = ygl::zero2f;
+        switch (mouse_button) {
+            case 1: rotate = (mouse_pos - mouse_last) / 100.0f; break;
+            default: break;
+        }
+        ygl::camera_fps(cam->frame, {0, 0, 0}, rotate);
+        updated = true;
+    }
+
+    // handle keytboard for navigation
+    if (!ygl::get_widget_active(win)) {
+        auto transl = ygl::zero3f;
+        if (ygl::get_key(win, 'a')) transl.x -= 1;
+        if (ygl::get_key(win, 'd')) transl.x += 1;
+        if (ygl::get_key(win, 's')) transl.z += 1;
+        if (ygl::get_key(win, 'w')) transl.z -= 1;
+        if (ygl::get_key(win, 'e')) transl.y += 1;
+        if (ygl::get_key(win, 'q')) transl.y -= 1;
+        if (transl != ygl::zero3f) {
+            ygl::camera_fps(cam->frame, 0.25f * transl, {0, 0});
+            updated = true;
+        }
+    }
+
+    // record mouse position
+    mouse_last = mouse_pos;
+
+    // done
+    return updated;
+}
 
 
 struct GlobalState
@@ -30,7 +71,7 @@ framebuffer_size_callback(GLFWwindow* glfw_window, int width, int height)
 int
 main(int argc, char** argv)
 {
-	ygl::gl_window* window = ygl::make_window(DEFAULT_SCREEN_SIZE_X, DEFAULT_SCREEN_SIZE_Y, "SDF", &global_state);
+	ygl::gl_window* window = ygl::make_window(800, 600, "SDF", &global_state);
 	glfwSetFramebufferSizeCallback(window->gwin, framebuffer_size_callback);
 	ygl::init_widgets(window);
 	
@@ -38,8 +79,8 @@ main(int argc, char** argv)
 	ygl::bind_program(gl_program);
 	
 	
-	int uniform_location_raymarcher_iterations = ygl::get_program_uniform_location(gl_program, "raymarcher.iterations");
-	int uniform_location_raymarcher_epsilon    = ygl::get_program_uniform_location(gl_program, "raymarcher.epsilon");
+	int uniform_location_raymarcher_iterations = ygl::get_program_uniform_location(gl_program, "raymarch.iterations");
+	int uniform_location_raymarcher_epsilon    = ygl::get_program_uniform_location(gl_program, "raymarch.epsilon");
 	int uniform_location_camera_frame          = ygl::get_program_uniform_location(gl_program, "camera.frame");
 	int uniform_location_camera_yfov           = ygl::get_program_uniform_location(gl_program, "camera.yfov");
 	int uniform_location_camera_aspect         = ygl::get_program_uniform_location(gl_program, "camera.aspect");

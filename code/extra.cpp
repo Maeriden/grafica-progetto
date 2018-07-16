@@ -227,7 +227,8 @@ handle_camera_navigation(ygl::gl_window* window, ygl::frame3f& camera_frame)
 		if(ygl::get_key(window, GLFW_KEY_W)) transl.z += -0.1f;
 		if(ygl::get_key(window, GLFW_KEY_S)) transl.z += +0.1f;
 		
-		if(rotate != ygl::zero3f || transl != ygl::zero3f)
+		if(rotate != ygl::zero3f ||
+		   transl != ygl::zero3f)
 		{
 			transform_camera(camera_frame, transl, rotate);
 		}
